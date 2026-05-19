@@ -1,0 +1,30 @@
+async function procAll(){
+  var fac=gv("up-fac");if(!fac){alert("Select a facility first.");return;}
+  var btn=document.getElementById("up-pb");btn.disabled=true;btn.textContent="Processing...";
+  upExt=[];
+  for(var i=0;i<upFiles.length;i++){
+    document.getElementById("sf-"+i).textContent="Reading...";document.getElementById("sf-"+i).style.color="var(--am)";document.getElementById("pf-"+i).style.width="20%";
+    try{
+      var b64=await f64(upFiles[i]);
+      document.getElementById("pf-"+i).style.width="40%";
+      var res=await fetch("https://lhkslqhplhrwjadjgink.supabase.co/functions/v1/extract-facesheet",{
+        method:"POST",
+        headers:{
+          "Content-Type":"application/json",
+          "Authorization":"Bearer sb_publishable_MXgXuxYnGC_Q7M8J7TRAlQ_z5VBeJDh"
+        },
+        body:JSON.stringify({pdfBase64:b64})
+      });
+      var data=await res.json();
+      var txt=data.content.map(function(c){return c.text||"";}).join("");
+      var parsed=JSON.parse(txt.replace(/```json|```/g,"").trim());
+      upExt.push(Object.assign({},parsed,{srcFile:upFiles[i].name,fac:fac}));
+      document.getElementById("pf-"+i).style.width="100%";document.getElementById("sf-"+i).textContent="Done";document.getElementById("sf-"+i).style.color="var(--tl)";
+    }catch(err){
+      document.getElementById("pf-"+i).style.width="100%";document.getElementById("pf-"+i).style.background="var(--rd)";
+      document.getElementById("sf-"+i).textContent="Error";document.getElementById("sf-"+i).style.color="var(--rd)";
+      upExt.push({name:"",dob:"",gender:"",room:"",admit:"",dx:"",ins:"",pv:"",code:"Full Code",al:"NKDA",mrn:"",srcFile:upFiles[i].name,fac:fac,_err:true});
+    }
+  }
+  btn.disabled=false;btn.textContent="Extract All with AI";renderUpRes();
+}
